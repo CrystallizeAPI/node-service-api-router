@@ -1,23 +1,22 @@
 import Koa from 'koa';
-
 export const httpMethods = ['get', 'post', 'put', 'patch', 'delete'] as const;
 export type HttpMethod = typeof httpMethods[number];
 
-export interface ValidatingRoute<S, T> {
+export interface ValidatingRoute<T> {
     schema?: any;
-    handler: (request: any, context: Koa.Context, args?: any) => Promise<T>;
-    args?: any;
+    handler: (payload: any, args: any) => Promise<T>;
+    args: (context: any) => any;
     authenticated?: boolean;
 }
 
 export interface StandardRoute {
-    handler: (ctx: Koa.Context) => Promise<void>;
+    handler: (context: Koa.Context) => Promise<void>;
     authenticated?: boolean;
 }
 
-export interface ValidatingRequestRouting<S extends object = {}, T extends object = {}> {
+export interface ValidatingRequestRouting<T extends object = {}> {
     [path: string]: {
-        [method in HttpMethod]?: ValidatingRoute<S, T>;
+        [method in HttpMethod]?: ValidatingRoute<T>;
     };
 }
 

@@ -6,7 +6,7 @@ import bodyParser from 'koa-bodyparser';
 import { performancesLogger } from './middlewares';
 import { ValidatingRequestRouting, StandardRouting, ValidatingRoute, StandardRoute } from '../types/routing';
 import compose from 'koa-compose';
-import { z, ZodError } from 'zod';
+import { ZodError } from 'zod';
 import { HttpMethod, httpMethods } from '../types/routing';
 
 export function createServiceApiApp(
@@ -28,21 +28,20 @@ export function createServiceApiApp(
         {
             routes: validatedRoutes,
             middlewareManagement: (routeInfo: unknown, method: HttpMethod, path: string) => {
-                const route = routeInfo as ValidatingRoute<any, any>;
+                const route = routeInfo as ValidatingRoute<any>;
                 const defaultMiddleware = async (ctx: Koa.Context, next: Koa.Next): Promise<void> => {
                     try {
-                        const request = validateRequest(route.schema, ctx.request.body);
-                        const response = await route.handler(request, ctx, route.args);
-                        ctx.body = response;
+                        const payload = validatePayload(route.schema, ctx.request.body);
+                        ctx.response.body = await route.handler(payload, route.args(ctx));
                     } catch (exception: any | ZodError) {
                         if (exception instanceof ZodError) {
-                            ctx.body = { issues: exception.issues };
+                            ctx.response.body = { issues: exception.issues };
                             ctx.status = 400;
                         }
+                        console.log(exception);
                         ctx.response.body = exception;
                         ctx.response.status = exception.code || 500;
                         ctx.response.message = exception.status;
-                        console.log(exception);
                     }
                     next();
                 };
@@ -113,9 +112,9 @@ function toHttpMethod(method: string): HttpMethod {
     throw new Error(`Unknown HTTP method ${method}`);
 }
 
-export function validateRequest<T>(schema: any | null, request: unknown): T {
+export function validatePayload<T>(schema: any | null, payload: unknown): T {
     if (schema === null) {
-        return request as T;
+        return payload as T;
     }
-    return schema.parse(request);
+    return schema.parse(payload);
 }
