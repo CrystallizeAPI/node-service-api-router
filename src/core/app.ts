@@ -113,7 +113,7 @@ function toHttpMethod(method: string): HttpMethod {
 }
 
 export function validatePayload<T>(schema: any | null, payload: unknown): T {
-    if (schema === null) {
+    if (!schema) {
         return payload as T;
     }
     return schema.parse(payload);
