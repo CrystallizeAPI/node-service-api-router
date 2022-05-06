@@ -33,17 +33,12 @@ export function createServiceApiApp(
                     try {
                         const payload = validatePayload(route.schema, ctx.request.body);
                         ctx.response.body = await route.handler(payload, route.args(ctx));
-                    } catch (exception: any | ZodError) {
-                        if (exception instanceof ZodError) {
-                            ctx.response.body = { issues: exception.issues };
-                            ctx.status = 400;
-                        }
-                        console.log(exception);
-                        ctx.response.body = exception;
-                        ctx.response.status = exception.code || 500;
-                        ctx.response.message = exception.status;
+                    } catch (exception) {
+                        const { body, status } = handleException(exception);
+                        ctx.response.body = body;
+                        ctx.status = status;
                     }
-                    next();
+                    await next();
                 };
                 if (route.authenticated) {
                     router[method](path, compose([authenticatedMiddleware, defaultMiddleware]));
@@ -59,12 +54,12 @@ export function createServiceApiApp(
                 const defaultMiddleware = async (ctx: Koa.Context, next: Koa.Next): Promise<void> => {
                     try {
                         await route.handler(ctx);
-                    } catch (exception: any) {
-                        ctx.response.body = exception;
-                        ctx.response.status = exception.code || 500;
-                        ctx.response.message = exception.status;
+                    } catch (exception) {
+                        const { body, status } = handleException(exception);
+                        ctx.response.body = body;
+                        ctx.status = status;
                     }
-                    next();
+                    await next();
                 };
                 if (route.authenticated) {
                     router[method](path, compose([authenticatedMiddleware, defaultMiddleware]));
@@ -97,6 +92,48 @@ export function createServiceApiApp(
                 console.log(`Service API - Started`);
             });
         }
+    };
+}
+
+function handleException(exception: any): { body: any; status: number } {
+    const pontentialMessage = exception?.message || exception?.statusMessage || exception?.statusText;
+    const pontentialStatusCode = parseInt(exception?.code || exception?.status || exception?.statusCode);
+    let statusCode = null;
+    if (pontentialStatusCode >= 400 && pontentialStatusCode < 500) {
+        statusCode = pontentialStatusCode;
+    }
+    if (exception instanceof ZodError) {
+        return {
+            body: {
+                message: pontentialMessage || 'Validation Error',
+                issues: exception.issues
+            },
+            status: statusCode || 400
+        };
+    }
+    if (exception?.errors) {
+        return {
+            body: {
+                message: pontentialMessage,
+                issues: exception.errors
+            },
+            status: statusCode || 400
+        };
+    }
+    if (statusCode) {
+        return {
+            body: {
+                message: pontentialMessage
+            },
+            status: statusCode
+        };
+    }
+    console.log(exception);
+    return {
+        body: {
+            exception
+        },
+        status: 500
     };
 }
 

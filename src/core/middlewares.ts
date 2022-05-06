@@ -27,7 +27,7 @@ export function authenticatedMiddleware(jwtSecret: string): Koa.Middleware {
         try {
             const decoded = jwt.verify(token, jwtSecret);
             if (decoded.sub === 'isLoggedInOnServiceApiToken') {
-                context.user = (jwt.decode(token as string) as JwtPayload).aud;
+                context.user = jwt.decode(token as string) as JwtPayload;
             } else {
                 unauthorized(3);
                 return;
