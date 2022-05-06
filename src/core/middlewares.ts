@@ -16,7 +16,7 @@ export function authenticatedMiddleware(jwtSecret: string): Koa.Middleware {
         const unauthorized = (code: number) => {
             context.status = 401;
             context.body = {
-                message: 'Unauthorized. Error code: ' + code
+                message: 'Unauthorized. Error code: ' + code,
             };
         };
         const token = context.cookies.get('jwt');

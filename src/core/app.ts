@@ -12,15 +12,15 @@ import { HttpMethod, httpMethods } from '../types/routing';
 export function createServiceApiApp(
     validatedRoutes: ValidatingRequestRouting,
     standardRoutes: StandardRouting,
-    authenticatedMiddleware: Koa.Middleware
+    authenticatedMiddleware: Koa.Middleware,
 ): { run: (port: number) => void; router: Router; app: Koa } {
     const app = new Koa();
     const router = new Router();
     app.use(performancesLogger());
     app.use(
         cors({
-            credentials: true
-        })
+            credentials: true,
+        }),
     );
     app.use(json({ pretty: false }));
     app.use(bodyParser());
@@ -45,7 +45,7 @@ export function createServiceApiApp(
                 } else {
                     router[method](path, defaultMiddleware);
                 }
-            }
+            },
         },
         {
             routes: standardRoutes,
@@ -66,8 +66,8 @@ export function createServiceApiApp(
                 } else {
                     router[method](path, defaultMiddleware);
                 }
-            }
-        }
+            },
+        },
     ].forEach(({ routes, middlewareManagement }) => {
         Object.keys(routes).forEach((path: string) => {
             Object.keys(routes[path]).forEach((sMethod: string) => {
@@ -91,7 +91,7 @@ export function createServiceApiApp(
             app.listen(port, () => {
                 console.log(`Service API - Started`);
             });
-        }
+        },
     };
 }
 
@@ -106,34 +106,34 @@ function handleException(exception: any): { body: any; status: number } {
         return {
             body: {
                 message: pontentialMessage || 'Validation Error',
-                issues: exception.issues
+                issues: exception.issues,
             },
-            status: statusCode || 400
+            status: statusCode || 400,
         };
     }
     if (exception?.errors) {
         return {
             body: {
                 message: pontentialMessage,
-                issues: exception.errors
+                issues: exception.errors,
             },
-            status: statusCode || 400
+            status: statusCode || 400,
         };
     }
     if (statusCode) {
         return {
             body: {
-                message: pontentialMessage
+                message: pontentialMessage,
             },
-            status: statusCode
+            status: statusCode,
         };
     }
     console.log(exception);
     return {
         body: {
-            exception
+            exception,
         },
-        status: 500
+        status: 500,
     };
 }
 
